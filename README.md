@@ -1,8 +1,8 @@
 # Vanisher
 
-[![PyPI - Version](https://img.shields.io/pypi/v/vanisher.svg)](https://pypi.org/project/vanisher)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/vanisher)](https://pypi.org/project/vanisher)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/vanisher.svg)](https://pypi.org/project/vanisher)
+[![PyPI - Version](https://img.shields.io/pypi/v/wvanisher.svg)](https://pypi.org/project/wvanisher)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/wvanisher)](https://pypi.org/project/wvanisher)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wvanisher.svg)](https://pypi.org/project/wvanisher)
 
 🔩 A flexible configuration management library for Python with dot notation support, environment variable overrides and more.
 
