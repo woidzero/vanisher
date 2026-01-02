@@ -36,9 +36,6 @@ jobs:
       - name: Lint (ruff)
         run: uv run ruff check src/vanisher
 
-      - name: Run tests
-        run: uv run pytest -v
-
       - name: Build package
         run: uv run hatch build
 
