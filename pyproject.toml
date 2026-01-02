@@ -7,14 +7,25 @@ name = "wvanisher"
 dynamic = ["version"]
 description = "A flexible configuration management library for Python with dot notation support, environment variable overrides, and more."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = { file = "LICENSE" }
-keywords = ["config", "configuration", "management", "control", "env", "options", "parameters", "json"]
-authors = [
-    { name = "woidzero", email = "wwwoidzero@gmail.com" },
+keywords = [
+  "config",
+  "configuration",
+  "management",
+  "control",
+  "env",
+  "options",
+  "parameters",
+  "json",
+  "json-db",
+  "database",
+  "db",
 ]
+authors = [{ name = "woidzero", email = "wwwoidzero@gmail.com" }]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
+  "Typing :: Typed",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
@@ -25,48 +36,26 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = ["python-dotenv"]
+
+[project.optional-dependencies]
+yaml = ["PyYAML"]
+toml = ["toml"]
+dev = ["ty", "ruff", "pytest", "coverage"]
 
 [project.urls]
 Documentation = "https://github.com/woidzero/vanisher#readme"
 Issues = "https://github.com/woidzero/vanisher/issues"
 Source = "https://github.com/woidzero/vanisher"
 
-
 [tool.hatch.version]
 path = "src/vanisher/__about__.py"
-
-[tool.hatch.envs.dev]
-python = "3.13"
-dependencies = [
-  "mypy>=1.0.0",
-]
-
-[tool.hatch.envs.dev.scripts]
-check = "mypy --install-types --non-interactive {args:src/vanisher tests}"
-
-[tool.hatch.envs.hatch-test]
-dependencies = [
-  "pytest",
-  "coverage"
-]
-
-[[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.13", "3.12", "3.11", "3.10", "3.9", "3.8", "3.7"]
-
-[tool.hatch.envs.hatch-test.scripts]
-run = "pytest{env:HATCH_TEST_ARGS:} ./tests/main.py -v"
-run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} ./tests/main.py -v"
-cov-combine = "coverage combine"
-cov-report = "coverage report"
 
 [tool.coverage.run]
 source_pkgs = ["vanisher", "tests"]
 branch = true
 parallel = true
-omit = [
-  "src/vanisher/__about__.py",
-]
+omit = ["src/vanisher/__about__.py"]
 
 [tool.coverage.paths]
 vanisher = ["src/vanisher", "*/vanisher/src/vanisher"]
@@ -77,7 +66,11 @@ exclude_lines = [
   "no cov",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+  "def __repr__",
 ]
+
+[tool.ruff]
+target-version = "py38"
 
 [tool.ruff.lint]
 ignore = ["FBT001", "FBT002"]

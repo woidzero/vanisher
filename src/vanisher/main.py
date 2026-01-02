@@ -9,24 +9,40 @@ from __future__ import annotations
 import json
 import os
 from copy import deepcopy
-from typing import Any
+from typing import Any, Iterator, Mapping, Optional, overload
+
+from dotenv import find_dotenv, load_dotenv
 
 __all__ = ["Vanisher"]
 
 
 class Vanisher:
-    def __init__(self, path: str, env_override: bool = True) -> None:
+    def __init__(
+        self,
+        path: str,
+        env_override: bool = True,
+        env_path: Optional[str] = None,
+    ) -> None:
         """
-        Initialize Vanisher.
+        initialize Vanisher.
 
-        Args:
-            path (str): Path to JSON config file.
-            env_override (bool): If True, environment variables override config values.
+        Parameters
+        -------
+            path : str
+                path to JSON config file.
+            env_override : bool
+                if True, environment variables override config values. default to true
+            env_path : Optional[str]
+                relative path to .env file. default to none
         """
         self._path = path
         self._file = os.path.basename(self._path)
         self._data = self._safe_read()
         self.env_override = env_override
+        self.env_path = env_path
+
+        if env_override:
+            load_dotenv(env_path or find_dotenv())
 
     @property
     def path(self) -> str:
@@ -44,25 +60,32 @@ class Vanisher:
     # ENVIRONMENT OVERRIDE
     # -----------------------------
     def _env_key(self, key: str) -> str:
-        """Convert dot-notation key to UPPERCASE_UNDERSCORE."""
+        """convert dot-notation key to UPPERCASE_UNDERSCORE."""
         return key.replace(".", "_").upper()
 
-    def _check_env(self, key: str, default: Any = None) -> Any:
+    def _check_env(self, key: str) -> str | None:
         if not self.env_override:
             return None
+
         env_key = self._env_key(key)
-        return os.getenv(env_key, default)
+        return os.getenv(env_key)
 
     # -----------------------------
     # CORE ACCESS
     # -----------------------------
     def _resolve(self, key: str, default: Any | None = None) -> Any:
-        """Resolve a single key with env override and fallback to config data."""
+        """resolve a single key with env override and fallback to config data."""
         env_val = self._check_env(key)
         if env_val is not None:
             return env_val
 
         return self._get_single(key, default)
+
+    @overload
+    def get(self, key: str, *, default: Any | None = None) -> Any: ...
+
+    @overload
+    def get(self, *keys: str, default: Any | None = None) -> dict[str, Any]: ...
 
     def get(self, *keys: str, default: Any | None = None) -> Any:
         if len(keys) == 1:
@@ -94,20 +117,24 @@ class Vanisher:
 
         return True
 
-    def set(self, key: str | dict, value: Any = None) -> None:
-        """Set single or multiple keys."""
-        if isinstance(key, dict):
+    @overload
+    def set(self, key: str, value: Any) -> None: ...
+
+    @overload
+    def set(self, key: Mapping[str, Any], value: None = None) -> None: ...
+
+    def set(self, key: str | Mapping[str, Any], value: Any = None) -> None:
+        if isinstance(key, Mapping):
             for k, v in key.items():
                 self._set_single(k, v)
         elif isinstance(key, str):
             self._set_single(key, value)
         else:
-            msg = "Key must be str or dict"
-            raise TypeError(msg)
+            raise TypeError("key must be str or mapping")
 
         self.write(self._data)
 
-    def _set_single(self, key: str, value: Any) -> None:
+    def _set_single(self, key: str | Any, value: Any) -> None:
         keys = key.split(".")
         current = self._data
         for k in keys[:-1]:
@@ -118,20 +145,25 @@ class Vanisher:
 
     def delete(self, *keys: str, _return: bool = False) -> dict | None:
         """
-        Delete one or more keys.
+        delete one or more keys.
 
-        Args:
-            *keys: Dot-notation keys to delete.
-            _return: If True, return deleted {key: value}.
+        Parameters
+        ----------
+            *keys : str
+                dot-notation keys to delete.
+            _return : bool
+                if True, return deleted {key: value}.
 
-        Returns:
-            Optional[dict]: Deleted key-value pairs if _return=True
+        Returns
+        -------
+            Optional[dict]: deleted key-value pairs if _return=True
         """
         deleted = {}
         for key in keys:
             value = self._delete_single(key)
             if value is not None:
                 deleted[key] = value
+
         self.write(self._data)
         return deleted if _return else None
 
@@ -151,7 +183,6 @@ class Vanisher:
     # -----------------------------
     # TYPE-SAFE GETTERS
     # -----------------------------
-
     def get_int(self, key: str, default: bool | None = None) -> int | None:
         val = self._resolve(key, default)
         try:
@@ -178,6 +209,7 @@ class Vanisher:
                 return False
         if isinstance(val, (int, float)):
             return bool(val)
+        
         return default
 
     def get_str(self, key: str, default: str | None = None) -> str | None:
@@ -189,7 +221,8 @@ class Vanisher:
         if isinstance(val, list):
             return val
         if isinstance(val, str):
-            return [v.strip() for v in val.split(",")]
+            return [v.strip() for v in val.split(",") if v.strip()]
+
         return default
 
     def get_dict(self, key: str, default: dict | None = None) -> dict | None:
@@ -243,7 +276,7 @@ class Vanisher:
             try:
                 import yaml
 
-                return yaml.dump(self._data)
+                return yaml.safe_dump(self._data)
             except ImportError:
                 msg = "PyYAML not installed"
                 raise RuntimeError(msg) from ImportError
@@ -257,7 +290,7 @@ class Vanisher:
                 msg = "toml not installed"
                 raise RuntimeError(msg) from ImportError
 
-        msg = "Unsupported format"
+        msg = "unsupported format"
         raise ValueError(msg)
 
     def import_(self, data: dict | str, merge: bool = True) -> None:
@@ -290,7 +323,7 @@ class Vanisher:
     def __len__(self) -> int:
         return len(self.list_keys())
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self.list_keys())
 
     def __repr__(self) -> str:
@@ -309,7 +342,7 @@ class Vanisher:
             with open(self._path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)
         except OSError as e:
-            msg = "Failed to write config file"
+            msg = "failed to write config file"
             raise RuntimeError(msg) from e
 
     def _safe_read(self) -> dict:

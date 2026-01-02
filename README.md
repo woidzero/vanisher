@@ -21,7 +21,7 @@
 ## Installation
 
 ```bash
-pip install vanisher
+pip install wvanisher
 ```
 
 ## Quick Start
@@ -37,7 +37,9 @@ config.set({
     "database.user.name": "user"
 })
 
-config.get("server.port") # prints: 8080
+port = config.get("server.port")
+
+print(port) # prints: 8080
 ```
 
 ## Environment Variables
@@ -45,31 +47,44 @@ config.get("server.port") # prints: 8080
 Environment variables automatically override config values when `env_override=True` (default).
 Keys are converted to UPPERCASE with underscores: `database.host` → `DATABASE_HOST`
 
+```env
+SERVER_PORT=8080
+```
+
+```python
+import vanisher
+
+config = vanisher.Vanisher("config.json", env_overrides=True)
+port = config.get("server.port")
+
+print(port) # prints: 8080
+```
+
 ## Type-Safe Getters
 
 ```python
-config.get_int("port", 8080)    # Returns int
-config.get_bool("debug", False) # Returns bool
-config.get_list("allowed_ips")  # Returns list
-config.get_dict("settings")     # Returns dict
+config.get_int("port", 8080)    # returns int
+config.get_bool("debug", False) # returns bool
+config.get_list("allowed_ips")  # returns list
+config.get_dict("settings")     # returns dict
 ```
 
 ## Advanced Features
 
 ```python
-# List all config keys
+# list all config keys
 keys = config.list_keys()
 
-# Export config
+# export config
 json_str = config.export("json")
-yaml_str = config.export("yaml")  # Requires PyYAML
-toml_str = config.export("toml")  # Requires toml
+yaml_str = config.export("yaml")  # requires PyYAML
+toml_str = config.export("toml")  # requires toml
 
-# Import config
+# import config
 config.import_('{"key": "value"}')
 config.import_({"key": "value"})
 
-# Merge configurations
+# merge configurations
 config.merge({"new": "data"})
 ```
 
